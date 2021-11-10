@@ -1,0 +1,25 @@
+#!/usr/bin/env ruby
+
+require_relative '../lib/cotcube-dataproxy'
+
+Signal.trap('TERM') { local_interrupt }
+Signal.trap('INT')  { local_interrupt }
+
+# TODO: Prepare reload config on SIGHUP
+Signal.trap('HUP')  { 'TODO: Reload config'}
+exiting = false
+
+define_method :local_interrupt do
+  exiting = true
+end
+
+dataproxy = Cotcube::DataProxy.new
+
+begin
+  loop do
+    exit if exiting
+    sleep 1
+  end
+ensure
+  dataproxy.shutdown
+end
