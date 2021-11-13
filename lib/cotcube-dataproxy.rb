@@ -5,7 +5,7 @@ Bundler.require
 require_relative './cotcube-dataproxy/3rd_clients'
 require_relative './cotcube-dataproxy/init'
 require_relative './cotcube-dataproxy/client_response'
-require_relative './cotcube-dataproxy/subscribe_messages'
+require_relative './cotcube-dataproxy/subscribers'
 require_relative './cotcube-dataproxy/commserver'
 require_relative './cotcube-dataproxy/gc'
 
