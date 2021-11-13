@@ -29,9 +29,10 @@ Gem::Specification.new do |spec|
   spec.add_dependency 'activesupport',      '~> 6'
   spec.add_dependency 'ib-api',             '~> 972'
   spec.add_dependency 'colorize',           '~> 0.8'
-  spec.add_dependency 'cotcube-helpers',    '~> 0.2'
+  spec.add_dependency 'cotcube-helpers',    '~> 0.2.1'
   spec.add_dependency 'outputhandler',      '~> 0.2'
   spec.add_dependency 'bunny',              '~> 2'
+  spec.add_dependency 'httparty'            '~> 0.20'
   spec.add_dependency 'yaml',               '~> 0.1'
   spec.add_dependency 'json',               '~> 2'
 
