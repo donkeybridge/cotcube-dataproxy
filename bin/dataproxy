@@ -6,20 +6,19 @@ Signal.trap('TERM') { local_interrupt }
 Signal.trap('INT')  { local_interrupt }
 
 # TODO: Prepare reload config on SIGHUP
-Signal.trap('HUP')  { 'TODO: Reload config'}
+Signal.trap('HUP')  { puts 'TODO: Reload config' }
 exiting = false
-
-define_method :local_interrupt do
-  exiting = true
-end
 
 dataproxy = Cotcube::DataProxy.new
 
+define_method :local_interrupt do
+  dataproxy.send(:log, "DATAPROXY Received termination request...")
+  exiting = true
+end
+
+
 begin
-  loop do
-    exit if exiting
-    sleep 1
-  end
+  loop { exit if exiting; sleep 0.5 }
 ensure
   dataproxy.shutdown
 end

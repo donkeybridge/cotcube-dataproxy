@@ -7,7 +7,7 @@ module Cotcube
     def initialize(
       outputhandler: OutputHandler.new(
         location: "/var/cotcube/log/dataproxy"
-      ),
+      )
     )
       @output = outputhandler
       @client = DataProxy.get_ib_client
