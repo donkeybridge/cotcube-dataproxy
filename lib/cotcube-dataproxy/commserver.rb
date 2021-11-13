@@ -116,93 +116,17 @@ module Cotcube
         #     and feeds them into a fanout exchange dedicated to that contract
         #     delivery continues as long as there are queues bound to that exchange
         # 
-        # obviously the first requestor in itiates, the latter ones just attach their queue to this exchange
         when Cotcube::Helpers.sub(minimum:4){'realtimebars'}
           subscribe_persistent(request, type: :realtimebars)
           next
-          sym    = Cotcube::Helpers.get_id_set(contract: request[:contract])
-          con_id = request[:con_id] || Cotcube::Helpers.get_ib_contract(request[:contract])[:con_id] rescue nil
-          if sym.nil? or con_id.nil?
-            client_fail(request) { "Invalid contract '#{request[:contract]}'." } 
-            next
-          end
-          if persistent[:realtimebars][con_id].nil?
-            per_mon.synchronize { 
-              persistent[:realtimebars][con_id] = { con_id: con_id, 
-                                                    contract: request[:contract], 
-                                                    exchange: mq[:channel].fanout(request[:exchange]) } 
-            } 
-            ib_contract = IB::Contract.new(con_id: con_id, exchange: sym[:exchange])
-            ib.send_message(:RequestRealTimeBars, id: con_id, contract: ib_contract, data_type: :trades, use_rth: false)
-            client_success(request) { "Delivery of realtimebars of #{request[:contract]} started." }
-          elsif persistent[:realtimebars][con_id][:on_cancel] 
-            client_fail(request) { { reason: :on_cancel, message: "Exchange '#{requst[:exchange]}' is marked for cancel, retry in a few seconds to recreate" } }
-            next
-          else
-            client_success(request) { "Delivery of realtimebars of #{request[:contract]} attached to existing." } 
-          end
 
         when 'ticks'
           subscribe_persistent(request, type: :realtimebars)
           next
-          sym    = Cotcube::Helpers.get_id_set(contract: request[:contract])
-          con_id = request[:con_id] || Cotcube::Helpers.get_ib_contract(request[:contract])[:con_id] rescue nil
-          if sym.nil? or con_id.nil?
-            client_fail(request) { "Invalid contract '#{request[:contract]}'." }
-            next
-          end
-          if persistent[:ticks][con_id].nil?
-            per_mon.synchronize { 
-              persistent[:ticks][con_id] = { con_id: con_id,
-                                             contract: request[:contract],
-                                             exchange: mq[:channel].fanout(request[:exchange]) } 
-            }
-            ib_contract = IB::Contract.new(con_id: con_id, exchange: sym[:exchange])
-            ib.send_message(:RequestMarketData, id: con_id, contract: ib_contract)
-          elsif persistent[:ticks][con_id][:on_cancel]
-            client_fail(request) { { reason: :on_cancel, message: "Exchange '#{requst[:exchange]}' is marked for cancel, retry in a few seconds to recreate" } }
-            next
-          end
-          client_success(request) { "Delivery of ticks of #{request[:contract]} started." }
 
         when 'depth'
           subscribe_persistent(request, type: :depth)
           next
-          sym    = Cotcube::Helpers.get_id_set(contract: request[:contract])
-          con_id = request[:con_id] || Cotcube::Helpers.get_ib_contract(request[:contract])[:con_id] rescue nil
-          if sym.nil? or con_id.nil? 
-            client_fail(request) { "Invalid contract '#{request[:contract]}'." }
-            next
-          end
-          if persistent[:depth][con_id].nil?
-            per_mon.synchronize { 
-              persistent[:depth][con_id] = { con_id: con_id, contract: request[:contract],
-                                             exchange: mq[:channel].fanout(request[:exchange]), 
-                                             buffer: [] } 
-            }
-            bufferthread = Thread.new do
-              sleep 5.0 - (Time.now.to_f % 5)
-              loop do
-                begin
-                  # TODO: This is very basic mutual exclusion !!! 
-                  @block_depth_queue = true
-                  sleep 0.025
-                  con = persistent[:depth][con_id]
-                  con[:exchange].publish(con[:buffer].to_json)
-                  con[:buffer] = [] 
-                  @block_depth_queue = false
-                end
-                sleep 5.0 - (Time.now.to_f % 5)
-              end
-            end
-            per_mon.synchronize { persistent[:depth][con_id][:bufferthread] = bufferthread }
-            ib_contract = IB::Contract.new(con_id: con_id, exchange: sym[:exchange])
-            ib.send_message(:RequestMarketDepth, id: con_id, contract: ib_contract, num_rows: 10) 
-          elsif persistent[:ticks][con_id][:on_cancel]
-            client_fail(request) { { reason: :on_cancel, message: "Exchange '#{requst[:exchange]}' is marked for cancel, retry in a few seconds to recreate" } }
-            next
-          end
-          client_success(request) { "Delivery of market depth of #{request[:contract]} started." }
 
         else
           client_fail(request) { "Unknown :command '#{request[:command]}' in '#{request}'." }
