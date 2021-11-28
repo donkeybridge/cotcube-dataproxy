@@ -27,11 +27,11 @@ module Cotcube
         response = { error: 1, msg: "Processing failed for '#{msg.inspect}' after '#{request}'." }
       end
       if response[:error] == 1
-        log "CLIENT #{id} FAILIURE:      #{response.inspect}.".colorize(:light_red)
+        log "CLIENT #{__id__} FAILIURE:      #{response.inspect}.".colorize(:light_red)
       elsif response[:result].is_a?(Array)
-        log "CLIENT #{id} SUCCESS:       sent #{response[:result].size} datasets."
+        log "CLIENT #{__id__} SUCCESS:       sent #{response[:result].size} datasets."
       else
-        log "CLIENT #{id} SUCCESS:       #{response.to_s.scan(/.{1,120}/).join(' '*30 + "\n")}"
+        log "CLIENT #{__id__} SUCCESS:       #{response.to_s[..220].scan(/.{1,120}/).join(' '*30 + "\n")}"
       end
       mq[exchange].publish(
         response.to_json,
