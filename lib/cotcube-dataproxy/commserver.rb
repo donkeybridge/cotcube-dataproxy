@@ -75,6 +75,10 @@ module Cotcube
         #     the IB message 'HistoricalData' in message subscribers section
         #
         when Cotcube::Helpers.sub(minimum: 3) {'historical'}
+          unless request[:contract].is_a? String and request[:contract].size == 5
+            client_fail(request) { "IB needs complete contract information to request data, e.g. ESZ21 instead of ES, got '#{request[:contract]}' in '#{request}'." }
+            next
+          end
           con_id = request[:con_id] || Cotcube::Helpers.get_ib_contract(request[:contract])[:con_id] rescue nil
           if con_id.nil? or request[:contract].nil? 
              client_fail(request) { "Cannot get :con_id for contract:'#{request[:contract]}' in '#{request}'." } 
@@ -85,6 +89,8 @@ module Cotcube
           ib_contract = IB::Contract.new(con_id: con_id, exchange: sym[:exchange])
           req = {
             request_id:    request[:__id__].to_i(16),
+            symbol:        sym[:symbol],
+            sym:           sym,
             contract:      ib_contract,
             end_date_time: before,
             what_to_show:  (request[:based_on]                || :trades),
