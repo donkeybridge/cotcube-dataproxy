@@ -47,8 +47,8 @@ module Cotcube
         obj[:commands]      = obj[:connection].create_channel
         obj[:channel]       = obj[:connection].create_channel
         obj[:request_queue] = obj[:commands].queue('', exclusive: true, auto_delete: true)
-        obj[:request_exch]  = obj[:commands].direct('dataproxy_commands', exclusive: true, auto_delete: true)
-        obj[:replies_exch]  = obj[:commands].direct('dataproxy_replies', auto_delete: true)
+        obj[:request_exch]  = obj[:commands].direct('dataproxy_commands')
+        obj[:replies_exch]  = obj[:commands].direct('dataproxy_replies')
         %w[ dataproxy_commands  ].each do |key|
           obj[:request_queue].bind(obj[:request_exch], routing_key: key )
         end
