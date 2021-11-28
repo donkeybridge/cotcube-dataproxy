@@ -39,7 +39,15 @@ module Cotcube
           case msg
 
           when IB::Messages::Incoming::HistoricalData
-            client_success(requests[__id__]) { msg.results }
+            client_success(requests[__id__]) {
+              {
+                symbol:   requests[__id__][:contract][..1],
+                contract: requests[__id__][:contract],
+                base: msg.results.map{|z|
+                  z.attributes.tap{|z1| z1.delete(:created_at) }
+                }
+              }
+            }
             req_mon.synchronize { requests.delete(__id__) }
 
           when IB::Messages::Incoming::Alert # Alert
