@@ -1,3 +1,9 @@
+## 0.1.2 (November 28, 2021)
+  - subscribers/historical: returning improved values hash
+  - added validator for contract to sub historical
+  - client_response: improvied log output
+  - 3rd-clients: removed auto-delete (due to working GC)
+
 ## 0.1.1 (November 13, 2021)
   - added handy test_script in bin/test_client.rb
   - added httparty to Gem requirements
