@@ -1,3 +1,8 @@
+## 0.1.3 (December 18, 2021)
+  - added simple monit config via command to check if dp is up_and_running
+  - subscribers: added account_info processing (via special requests[:account_value], NOTE: forcing is not implemented yet)
+  - commserver: included validation on requested months for historical data
+
 ## 0.1.2 (November 28, 2021)
   - subscribers/historical: returning improved values hash
   - added validator for contract to sub historical
