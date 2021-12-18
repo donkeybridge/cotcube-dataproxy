@@ -79,12 +79,16 @@ module Cotcube
             client_fail(request) { "IB needs complete contract information to request data, e.g. ESZ21 instead of ES, got '#{request[:contract]}' in '#{request}'." }
             next
           end
-          con_id = request[:con_id] || Cotcube::Helpers.get_ib_contract(request[:contract])[:con_id] rescue nil
+          sym    = Cotcube::Helpers.get_id_set(contract: request[:contract])
+          unless sym[:months].chars.include? request[:contract][2]
+            client_fail(request) { "Cannot get invalid month '#{request[:contract][2]}', not in available months #{sym[:months]} for #{request[:contract]}" }
+            next
+          end
+          con_id = (request[:con_id] || Cotcube::Helpers.get_ib_contract(request[:contract])[:con_id]) rescue nil
           if con_id.nil? or request[:contract].nil? 
              client_fail(request) { "Cannot get :con_id for contract:'#{request[:contract]}' in '#{request}'." } 
              next
           end
-          sym    = Cotcube::Helpers.get_id_set(contract: request[:contract])
           before = Time.at(request[:before]).to_ib rescue Time.now.to_ib
           ib_contract = IB::Contract.new(con_id: con_id, exchange: sym[:exchange])
           req = {
@@ -96,7 +100,7 @@ module Cotcube
             what_to_show:  (request[:based_on]                || :trades),
             use_rth:       (request[:rth_only]                     || 1),
             keep_up_to_date: 0,
-            duration:      (request[:duration].gsub('_', ' ') || '1 D'),
+            duration:      (request[:duration].to_s.gsub('_', ' ') || '1 D'),
             bar_size:      (request[:interval].to_sym         || :min15)
           }
           req_mon.synchronize { requests[request[:__id__]] = request }
@@ -108,6 +112,24 @@ module Cotcube
             next
           end
 
+        when Cotcube::Helpers.sub(minimum: 3) {['account_info', 'accountinfo']}
+          requests[:account_value] ||= {}
+          unless requests[:account_value][:result].nil?
+            unless request[:force]
+              client_fail(request[:__id__]) {'Cannot request account_value, command is locked (force freeing with :force)'}
+              next
+            end
+          end
+          requests[:account_value][:result] = []
+          requests[:account_value][:__id__] = request[:__id__]
+          req_mon.synchronize { requests[request[:__id__]] = request }
+          begin
+            Timeout.timeout(2) { ib.send_message :RequestAccountData, subscribe: true }
+          rescue
+            client_fail(request) { 'Could not request account data. Is ib_client running?' }
+            req_mon.synchronize { requests.delete(request[:__id__]) }
+            next
+          end
 
         # ********************************************************************************************
         #
