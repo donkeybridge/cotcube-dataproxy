@@ -19,6 +19,7 @@ module Cotcube
         :ContractData, :ContractDataEnd, :BondContractData,
         :TickGeneric, :TickString, :TickPrice, :TickSize,
         :HistoricalData,
+        :AccountValue, :PortfolioValue, :AccountUpdateTime, :AccountDownloadEnd,
         :RealTimeBar
       ) do |msg|
 
@@ -101,6 +102,23 @@ module Cotcube
               log "Delivery for #{persistent[:ticks][con_id][:contract]} with con_id #{con_id} has been stopped."
               Thread.new{ sleep 0.25; per_mon.synchronize { persistent[:ticks].delete(con_id) } }
             end
+
+          when IB::Messages::Incoming::PortfolioValue,
+            IB::Messages::Incoming::AccountValue,
+            IB::Messages::Incoming::AccountUpdateTime
+            req_mon.synchronize do
+              %i[version account time timestamp].map{|z| data.delete(z) }
+              data[:type] = msg.class.to_s.split('::').last.to_sym
+              requests[:account_value][:result] << data
+            end
+
+
+          when IB::Messages::Incoming::AccountDownloadEnd
+            ib.send_message :RequestAccountData, subscribe: false
+            sleep 0.25
+            client_success(requests[requests[:account_value][:__id__]]) { requests[:account_value][:result] }
+            req_mon.synchronize { requests.delete(requests[:account_value][:__id__]) }
+            requests[:account_value] = {}
 
           else
             log("WARNING".light_red + "\tUnknown messagetype: #{msg.inspect}")
