@@ -9,6 +9,8 @@ module Cotcube
         location: "/var/cotcube/log/dataproxy"
       )
     )
+      check_pidfile
+      write_pidfile
       @output = outputhandler
       @client = DataProxy.get_ib_client
       @mq     = DataProxy.get_mq_client
@@ -24,10 +26,13 @@ module Cotcube
       commserver_start
       recover
       gc_start
+    rescue
+      remove_pidfile
+      raise
     end
 
     def shutdown
-      puts "Shutting down dataproxy."
+      log "Shutting down dataproxy."
       commserver_stop
       gc_stop
       mq[:commands].close
@@ -43,7 +48,16 @@ module Cotcube
       gc
       sleep 1
       ib.close
-      puts "... done."
+      remove_pidfile
+      log "... done."
+    end
+
+    def check_pidfile
+      raise RuntimeError, "Cannot start up, another instance might be up, please check and possibly remove #{PIDFILE}." if File.exist? PIDFILE
+    end
+
+    def write_pidfile
+      File.write(PIDFILE, Process.pid)
     end
 
     private 
@@ -54,13 +68,17 @@ module Cotcube
         src, type, contract = exch.split('_')
         next unless src == 'dataproxy'
         next unless %w[ ticks depth realtimebars ].include? type.downcase
-        puts "Found #{exch} to recover."
+        log "Found #{exch} to recover."
         subscribe_persistent( { contract: contract, exchange: exch }, type: type.to_sym )
       end
     end
 
     def log(msg)
       @output.puts "#{DateTime.now.strftime('%Y%m%d-%H:%M:%S:  ')}#{msg.to_s.scan(/.{1,120}/).join("\n" + ' ' * 20)}"
+    end
+
+    def remove_pidfile
+      File.delete(PIDFILE) if File.exist? PIDFILE
     end
 
   end

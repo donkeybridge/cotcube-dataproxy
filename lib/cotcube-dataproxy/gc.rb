@@ -51,16 +51,16 @@ module Cotcube
 
             _, subscription_type, contract = item[:name].split('_')
             unless %w[ ticks depth realtimebars ].include? subscription_type.downcase
-              puts "GC_WARNING: Unknown subscription_type '#{subscription_type}', skipping..."
+              log "GC_WARNING: Unknown subscription_type '#{subscription_type}', skipping..."
               next
             end
             con_id = Cotcube::Helpers.get_ib_contract(contract)[:con_id] rescue 0
             if con_id.zero?
-              puts "GC_WARNING: No con_id found for contract '#{contract}', skipping..."
+              log "GC_WARNING: No con_id found for contract '#{contract}', skipping..."
               next
             end
             if persistent[subscription_type.to_sym][con_id].nil?
-              puts "GC_WARNING: No record for subscription '#{subscription_type}_#{contract}' with #{con_id} found, deleting anyway..."
+              log "GC_WARNING: No record for subscription '#{subscription_type}_#{contract}' with #{con_id} found, deleting anyway..."
             end
             Thread.new do
               per_mon.synchronize { 
@@ -103,10 +103,10 @@ module Cotcube
       results.each do |type, items|
         items.each do |key,item|
           if item.is_a? Array
-            puts "#{key}\t\t#{item}"
+            log "#{key}\t\t#{item}"
             next
           end
-          puts "#{format '%12s', type.to_s.upcase}    #{
+          log "#{format '%12s', type.to_s.upcase}    #{
           case type
           when :queues 
             "Key: #{format '%-30s', key}  Cons: #{item[:consumers]}"

@@ -34,3 +34,4 @@ REQUEST_TYPES = {
   realtimebars: :RequestRealTimeBars
 }
 
+PIDFILE = '/var/cotcube/run/dataproxy.pid'
