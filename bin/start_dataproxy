@@ -1,0 +1,10 @@
+#!/bin/bash
+
+. /home/pepe/.rvm/scripts/rvm
+rvm use 2.7.5 --default >/dev/null
+
+cd /home/pepe/GEMS/cotcube-dataproxy
+bin/dataproxy & disown
+sleep 2
+echo 'dataproxy started' 
+exit 0

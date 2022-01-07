@@ -1,0 +1,9 @@
+#!/bin/bash
+
+PIDFILE=/var/cotcube/run/dataproxy.pid
+kill `cat ${PIDFILE}` 2>&1 
+while [ -f ${PIDFILE} ]
+do
+  sleep 0.2
+done
+exit 0
