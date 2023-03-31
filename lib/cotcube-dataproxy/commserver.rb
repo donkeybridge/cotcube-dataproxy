@@ -107,7 +107,7 @@ module Cotcube
           begin
             Timeout.timeout(2) { ib.send_message(IB::Messages::Outgoing::RequestHistoricalData.new(req)) }
           rescue Timeout::Error, IB::Error
-            client_fail(request) { 'Could not request historical data. Is ib_client running?' }
+            client_fail(request, err: 2) { 'Could not request historical data. Is ib_client running?' }
             req_mon.synchronize { requests.delete(request[:__id__]) } 
             next
           end
@@ -126,7 +126,7 @@ module Cotcube
           begin
             Timeout.timeout(2) { ib.send_message :RequestAccountData, subscribe: true }
           rescue
-            client_fail(request) { 'Could not request account data. Is ib_client running?' }
+            client_fail(request, err: 2) { 'Could not request account data. Is ib_client running?' }
             req_mon.synchronize { requests.delete(request[:__id__]) }
             next
           end

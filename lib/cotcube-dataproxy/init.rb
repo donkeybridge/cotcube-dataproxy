@@ -12,11 +12,8 @@ module Cotcube
       check_pidfile
       write_pidfile
       @output = outputhandler
-      @client = DataProxy.get_ib_client
-      @mq     = DataProxy.get_mq_client
-      @ib     = @client[:ib]
-      raise 'Could not connect to IB' unless @ib
-      raise 'Could not connect to RabbitMQ' if %i[ request_exch replies_exch request_queue ].map{|z| mq[z].nil? }.reduce(:|)
+      refresh_mq
+      refresh_ib
       @requests = {}
       @req_mon  = Monitor.new
       @persistent = { ticks: {}, depth: {}, realtimebars: {} }
@@ -29,6 +26,19 @@ module Cotcube
     rescue
       remove_pidfile
       raise
+    end
+
+    def refresh_ib
+      @client.close rescue nil
+      @client = DataProxy.get_ib_client
+      p client
+      @ib     = @client[:ib]
+      raise 'Could not connect to IB' unless @ib
+    end
+
+    def refresh_mq
+      @mq     = DataProxy.get_mq_client
+      raise 'Could not connect to RabbitMQ' if %i[ request_exch replies_exch request_queue ].map{|z| mq[z].nil? }.reduce(:|)
     end
 
     def shutdown

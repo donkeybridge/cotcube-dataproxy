@@ -1,9 +1,18 @@
 #!/bin/bash
 
 PIDFILE=/var/cotcube/run/dataproxy.pid
-kill `cat ${PIDFILE}` 2>&1 
-while [ -f ${PIDFILE} ]
-do
-  sleep 0.2
-done
-exit 0
+if [ ! -f ${PIDFILE} ]; then
+  echo "No pidfile for dataproxy, trying to kill existing processess"
+  ps ax | grep '[r]uby bin/dataproxy' | tr -s ' ' | cut -d' ' -f1 | xargs -n1 
+else
+  kill `cat ${PIDFILE}` 2>&1 
+  pidfile_test () {
+    if [ ! -f ${PIDFILE} ]; then
+      exit 0
+    fi
+  }< <(timeout 5s cat /dev/urandom )
+fi
+
+
+rm ${PIDFILE}
+

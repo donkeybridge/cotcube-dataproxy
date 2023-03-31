@@ -5,8 +5,8 @@ module Cotcube
       client_response( request, id: nil, to: nil, err: 0, exchange: exchange, &block)
     end
 
-    def client_fail(request,    id: nil, to: nil, exchange: :replies_exch, &block)
-      client_response(request,  id: nil, to: nil, err: 1, exchange: exchange, &block)
+    def client_fail(request,    id: nil, to: nil, err: 1,exchange: :replies_exch, &block)
+      client_response(request,  id: nil, to: nil, err: err, exchange: exchange, &block)
     end
 
     private
@@ -26,8 +26,8 @@ module Cotcube
       else
         response = { error: 1, msg: "Processing failed for '#{msg.inspect}' after '#{request}'." }
       end
-      if response[:error] == 1
-        log "CLIENT #{__id__} FAILIURE:      #{response.inspect}.".colorize(:light_red)
+      if response[:error].positive?
+        log "CLIENT #{__id__} FAILURE:      #{response.inspect}.".colorize(:light_red)
       elsif response[:result].is_a?(Array)
         log "CLIENT #{__id__} SUCCESS:       sent #{response[:result].size} datasets."
       else
